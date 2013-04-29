@@ -4,11 +4,12 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
 
 #include "platforms.h"
 
 /* Conveniance macro for error handling */
-#define DIEP(fmt, ...) diep(__FILE__, __LINE__, fmt, __VA_ARGS__)
+#define DIEP(fmt, ...) diep(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
 
 void diep(const char* file, int line, const char *fmt, ...) {
 	const size_t BUFSIZE = 65536;
@@ -17,14 +18,14 @@ void diep(const char* file, int line, const char *fmt, ...) {
 
 	va_list args;
 	va_start(args, fmt);
-	vsprintf_s(vbuf, BUFSIZE, fmt, args);
+	vsprintf(vbuf, fmt, args);
 	va_end(args);
 
-	sprintf_s(buf, "%s:%d: %s", file, line, vbuf);
+	sprintf(buf, "%s:%d: %s", file, line, vbuf);
 
 #if PLATFORM == PLATFORM_MAC || PLATFORM == PLATFORM_UNIX
 	perror(buf);
-#else if PLATFORM_WINDOWS
+#elif PLATFORM_WINDOWS
 	OutputDebugString(_strerror(buf));
 #endif
 	

@@ -17,6 +17,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#define INVALID_SOCKET -1
 #endif
 
 bool initializeSocket() {
