@@ -21,7 +21,7 @@
 	#define INVALID_SOCKET -1
 #endif
 
-bool initializeSocket() {
+inline bool initializeSocket() {
 	#if PLATFORM == PLATFORM_WINDOWS
 		WSAData wsaData;
 		return (WSAStartup(MAKEWORD(2, 2), &wsaData) == NO_ERROR);
@@ -30,15 +30,15 @@ bool initializeSocket() {
 	#endif
 }
 
-void shutdownSocket() {
+inline void shutdownSocket() {
 	#if PLATFORM == PLATFORM_WINDOWS
 		WSACleanup();
 	#endif
 }
 
-bool setNonBlocking(int sockfd) {
+inline bool setNonBlocking(int sockfd) {
 	#if PLATFORM == PLATFORM_UNIX
-		if (fcntl(sockfd, SETFS, O_NONBLOCK) == -1)
+		if (fcntl(sockfd, F_SETFD, O_NONBLOCK) == -1)
 			return false;
 	#elif PLATFORM == PLATFORM_WINDOWS
 		DWORD nonBlocking = 1;
@@ -47,3 +47,13 @@ bool setNonBlocking(int sockfd) {
 	#endif
 	return true;
 }
+
+inline bool eWouldBlock() {
+    #if PLATFORM == PLATFORM_WINDOWS
+        return (WSAGetLastError() == WSAEWOULDBLOCK);
+    #else
+        return (errno == EWOULDBLOCK);
+    #endif
+}
+
+// vim:ts=4

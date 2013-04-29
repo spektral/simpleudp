@@ -68,7 +68,7 @@ int main(int args, char *argv[]) {
 			socklen_t fromSize = sizeof(from);
 
 			int recvd = recvfrom(sockfd, data, BUFSIZE, 0, (sockaddr*)&from, &fromSize);
-			if (recvd == -1 && WSAGetLastError() == WSAEWOULDBLOCK)
+			if (recvd == -1 && eWouldBlock())
 				break;
 			else if (recvd == -1)
 				DIEP("Error in recvfrom()");
@@ -142,3 +142,5 @@ int main(int args, char *argv[]) {
 
     return 0;
 }*/
+
+// vim: ts=4
