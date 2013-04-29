@@ -13,8 +13,8 @@
 
 void diep(const char* file, int line, const char *fmt, ...) {
 	const size_t BUFSIZE = 65536;
-	char vbuf[BUFSIZE] = {};
-	char buf[BUFSIZE] = {};
+	char vbuf[BUFSIZE] = { 0 };
+	char buf[BUFSIZE] = { 0 };
 
 	va_list args;
 	va_start(args, fmt);
@@ -25,16 +25,22 @@ void diep(const char* file, int line, const char *fmt, ...) {
 
 #if PLATFORM == PLATFORM_MAC || PLATFORM == PLATFORM_UNIX
 	perror(buf);
-#elif PLATFORM_WINDOWS
-	OutputDebugString(_strerror(buf));
+#elif PLATFORM == PLATFORM_WINDOWS
+	if (errno != NO_ERROR) {
+		OutputDebugString(_strerror(buf));
+	} else {
+		sprintf(vbuf, "%s: %d\n", buf, WSAGetLastError());
+		OutputDebugString(vbuf);
+	}
 #endif
 	
 	exit(1);
 }
 
 int main(int args, char *argv[]) {
+	bool quit = false;
 	int port = 50000;
-	sockaddr_in sai = {};
+	sockaddr_in sai = { 0 };
 
 	initializeSocket();
 
@@ -48,7 +54,30 @@ int main(int args, char *argv[]) {
 	if (bind(sockfd, (const sockaddr*)&sai, sizeof(sockaddr_in)) < 0)
 		DIEP("Failed to bind socket");
 
+	setNonBlocking(sockfd);
 
+	while (!quit) {
+		// Receive all pending packets
+		while (true) {
+			const size_t BUFSIZE = 1500;
+			char data[BUFSIZE] = { 0 };
+			unsigned int fromAddr;
+			unsigned short fromPort;
+
+			sockaddr_in from;
+			socklen_t fromSize = sizeof(from);
+
+			int recvd = recvfrom(sockfd, data, BUFSIZE, 0, (sockaddr*)&from, &fromSize);
+			if (recvd == -1 && WSAGetLastError() == WSAEWOULDBLOCK)
+				break;
+			else if (recvd == -1)
+				DIEP("Error in recvfrom()");
+
+			fromAddr = ntohl(from.sin_addr.s_addr);
+			fromPort = ntohs(from.sin_port);
+			printf("%u:%hu\n", fromAddr, fromPort);
+		}
+	}
 
 	shutdownSocket();
 }
