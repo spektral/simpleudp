@@ -1,16 +1,58 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
 #include <errno.h>
+#include <fcntl.h>
 
-#define BUFLEN 256
+#include "platforms.h"
 
+/* Conveniance macro for error handling */
+#define DIEP(fmt, ...) diep(__FILE__, __LINE__, fmt, __VA_ARGS__)
+
+void diep(const char* file, int line, const char *fmt, ...) {
+	const size_t BUFSIZE = 65536;
+	char vbuf[BUFSIZE] = {};
+	char buf[BUFSIZE] = {};
+
+	va_list args;
+	va_start(args, fmt);
+	vsprintf_s(vbuf, BUFSIZE, fmt, args);
+	va_end(args);
+
+	sprintf_s(buf, "%s:%d: %s", file, line, vbuf);
+
+#if PLATFORM == PLATFORM_MAC || PLATFORM == PLATFORM_UNIX
+	perror(buf);
+#else if PLATFORM_WINDOWS
+	OutputDebugString(_strerror(buf));
+#endif
+	
+	exit(1);
+}
+
+int main(int args, char *argv[]) {
+	int port = 50000;
+	sockaddr_in sai = {};
+
+	initializeSocket();
+
+	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sockfd == INVALID_SOCKET)
+		DIEP("Failed to create socket");
+
+	sai.sin_family = AF_INET;
+	sai.sin_addr.s_addr = INADDR_ANY;
+	sai.sin_port = htons((unsigned short) port);
+	if (bind(sockfd, (const sockaddr*)&sai, sizeof(sockaddr_in)) < 0)
+		DIEP("Failed to bind socket");
+
+
+
+	shutdownSocket();
+}
+
+/*
 int main(int args, char *argv[]) {
     const short port = 50000;
     const timespec ts = { 0, 200000000 };
@@ -69,4 +111,4 @@ int main(int args, char *argv[]) {
     }
 
     return 0;
-}
+}*/

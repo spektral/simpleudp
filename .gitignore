@@ -1,2 +1,6 @@
 *.swp
 *.out
+/server/Debug
+*.opensdf
+*.sdf
+*.suo
