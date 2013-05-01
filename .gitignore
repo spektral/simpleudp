@@ -1,6 +1,11 @@
 *.swp
 *.out
-/server/Debug
 *.opensdf
 *.sdf
 *.suo
+*.vxproj
+*.vxproj.filters
+*.sln
+/server/Debug
+/client/Debug
+/Simple\ UDP
