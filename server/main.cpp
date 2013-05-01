@@ -8,35 +8,6 @@
 
 #include "platforms.h"
 
-/* Conveniance macro for error handling */
-#define DIEP(fmt, ...) diep(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
-
-void diep(const char* file, int line, const char *fmt, ...) {
-	const size_t BUFSIZE = 65536;
-	char vbuf[BUFSIZE] = { 0 };
-	char buf[BUFSIZE] = { 0 };
-
-	va_list args;
-	va_start(args, fmt);
-	vsprintf(vbuf, fmt, args);
-	va_end(args);
-
-	sprintf(buf, "%s:%d: %s", file, line, vbuf);
-
-#if PLATFORM == PLATFORM_MAC || PLATFORM == PLATFORM_UNIX
-	perror(buf);
-#elif PLATFORM == PLATFORM_WINDOWS
-	if (errno != NO_ERROR) {
-		OutputDebugString(_strerror(buf));
-	} else {
-		sprintf(vbuf, "%s: %d\n", buf, WSAGetLastError());
-		OutputDebugString(vbuf);
-	}
-#endif
-	
-	exit(1);
-}
-
 int main(int args, char *argv[]) {
 	bool quit = false;
 	int port = 50000;
@@ -70,12 +41,13 @@ int main(int args, char *argv[]) {
 			int recvd = recvfrom(sockfd, data, BUFSIZE, 0, (sockaddr*)&from, &fromSize);
 			if (recvd == -1 && eWouldBlock())
 				break;
-			else if (recvd == -1)
+			else if (recvd < 0)
 				DIEP("Error in recvfrom()");
 
 			fromAddr = ntohl(from.sin_addr.s_addr);
 			fromPort = ntohs(from.sin_port);
-			printf("%u:%hu\n", fromAddr, fromPort);
+			printf("From: %u:%hu\n", fromAddr, fromPort);
+			printf("%s\n", data);
 		}
 	}
 
